@@ -1,11 +1,17 @@
 package com.ecovacs.ecosphere.intl;
 
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import com.ecovacs.ecosphere.intl.common.Common;
+import com.ecovacs.ecosphere.intl.common.JsonParse;
 import com.ecovacs.ecosphere.intl.common.PropertyData;
 import com.robotium.solo.Solo;
+
+import junit.framework.AssertionFailedError;
+
+import java.util.List;
 
 /**
  * Created by lily.shan on 2016/9/22.
@@ -31,44 +37,25 @@ public class DR95Clean {
         this.solo = solo;
     }
 
-    private boolean showView(String strID){
-        return solo.waitForView(solo.getView(strID));
-    }
-
-    private boolean showViewTry(String text, String viewName){
-        int i = 0;
-
-        while(!solo.waitForText(text)){
-            solo.sleep(500);
-            if(i > 20){
-                Log.e("AutoTest", "(showViewTry)Not show " + viewName);
-                return false;
-            }
-            i++;
-            Log.e("AutoTest", "(showViewTry)wait 500*" + Integer.toString(i));
-        }
-        Log.i("AutoTest", "(showViewTry)Show " + viewName + "!!!");
-        return true;
-    }
-
-    private boolean selectCountry(){
-        /*View cellView = Common.getInstance().getView("lly_select_country");
+    private boolean selectCountry(String strCountry){
+        View cellView = Common.getInstance().getView("lly_select_country");
         solo.clickOnView(cellView);
-        solo.clickOnText(PropertyData.getProperty("country"), 1, true);
+        solo.scrollListToTop(0);
+        solo.clickOnText(strCountry, 1, true);
         solo.sleep(500);
-        Common.getInstance().clickCtrlById("right", 0);*/
+        Common.getInstance().clickCtrlById("right", 0);
 
         TextView textCountry = (TextView)Common.getInstance().getView("tv_guoJia_diQu");
-        String strCountry = textCountry.getText().toString().trim();
-        if(!strCountry.equals(PropertyData.getProperty("country"))){
-            Log.e("AutoTest", "(Login)Select Wrong country/region!!! " +  strCountry);
+        String strTextCountry = textCountry.getText().toString().trim();
+        if(!strTextCountry.equals(strCountry)){
+            Log.e("AutoTest", "(Login)Select Wrong country/region!!! " +  strTextCountry);
             return false;
         }
-        Log.i("AutoTest", "(Login)Select country--" + PropertyData.getProperty("country"));
+        Log.i("AutoTest", "(Login)Select country--" + strCountry);
         return true;
     }
 
-    public boolean login(){
+    private boolean login(String strCountry){
         if(!showView("login")){
             Log.e("AutoTest", "(Login)Not show Welcome activity!!!");
             return false;
@@ -82,9 +69,9 @@ public class DR95Clean {
         }
         Log.i("AutoTest", "(Login)Show Login activity!!!");
 
-        /*if(!selectCountry()){
+        if(!selectCountry(strCountry)){
             return false;
-        }*/
+        }
 
         Common.getInstance().enterTextById("edt_email", PropertyData.getProperty("email"), 0);
         Common.getInstance().enterTextById("edt_pass", PropertyData.getProperty("pwd"), 0);
@@ -95,9 +82,38 @@ public class DR95Clean {
         return tryLoginFail();
     }
 
+    private boolean showView(String strID){
+        boolean bRes = false;
+        try {
+            if(solo.getView(strID) != null){
+                //Log.i("AutoTest", "(showViewTry)title_back null");
+                bRes = true;
+            }
+        }catch (AssertionFailedError e){
+            Log.e("AutoTest", "(showViewTry)" + e.toString());
+        }
+        return bRes;
+    }
+
+    private boolean showViewTry(String viewName){
+        int i = 0;
+        while(!showView("title_back") && !showView("right") &&
+                !showView("titleContent")){
+            i++;
+            solo.sleep(500);
+            if(i > 0){
+                Log.e("AutoTest", "(showViewTry)Not show " + viewName);
+                return false;
+            }
+            Log.e("AutoTest", "(showViewTry)wait 500*" + Integer.toString(i));
+        }
+        Log.i("AutoTest", "(showViewTry)Show " + viewName + "!!!");
+        return true;
+    }
+
     private boolean tryLoginFail(){
         int iLoop = 0;
-        while(!showViewTry(PropertyData.getProperty("add"), "Login activity")){
+        if (!showViewTry("Login activity")){
             if (solo.searchText(PropertyData.getProperty("loginErrorOk"))){
                 solo.clickOnButton(PropertyData.getProperty("loginErrorOk"));
                 Log.i("AutoTest", "login in xmpp failed" + Integer.toString(iLoop + 1));
@@ -105,17 +121,18 @@ public class DR95Clean {
                 Common.getInstance().clickCtrlById("btn_login", 0);
                 Log.i("AutoTest", "login in http failed" + Integer.toString(iLoop + 1));
             }
-            solo.sleep(500);
+            /*solo.sleep(500);
             if(iLoop > 20){
                 Log.e("AutoTest", "Login in failed!!!");
                 return false;
             }
-            iLoop++;
+            iLoop++;*/
+            return false;
         }
         return true;
     }
 
-    public boolean logout(){
+    private boolean logout(){
         Common.getInstance().clickCtrlById("right", 0);
         if(!showView("btn_exit")){
             Log.e("AutoTest", "(logout)Not show personal center activity!!!");
@@ -131,7 +148,7 @@ public class DR95Clean {
 
         for(int i = 0; i < 1000; i++){
             Log.i("AutoTest", "(regessLogin)************************************************");
-            if(!login()){
+            if(!login("Japan")){
                 Log.e("AutoTest", "(regessLogin)Login failed--No." + Integer.toString(i + 1));
                 return false;
             }
@@ -141,6 +158,59 @@ public class DR95Clean {
             }
             Log.i("AutoTest", "(regessLogin)Logout successfully--No." + Integer.toString(i + 1));
         }
+        return true;
+    }
+
+    public boolean register(String strCountry){
+        Common.getInstance().clickViewById("register");
+        Log.i("AutoTest", "(register)Click register in welcome activity!!!");
+
+        if(!showView("tv_youBian")){
+            Log.e("AutoTest", "(Login)Not show Registered activity");
+            return false;
+        }
+        Log.i("AutoTest", "(Login)Show Registered activity!!!");
+
+        if(!selectCountry(strCountry)){
+            return false;
+        }
+        Common.getInstance().enterTextById("edt_email", PropertyData.getProperty("email"), 0);
+        Common.getInstance().enterTextById("edt_pass", PropertyData.getProperty("pwd"), 0);
+        Common.getInstance().enterTextById("edt_pass_repeat", PropertyData.getProperty("pwd"), 0);
+        Common.getInstance().clickViewById("btn_register");
+        return true;
+    }
+
+
+    public boolean login_multiCountry(){
+        Log.i("AutoTest", "(login_multiCountry)run login multiple Country!!!");
+        List countryList = JsonParse.getJsonParse().readDataFromJson("config.json", "countries");
+        int iSize = countryList.size();
+        boolean bLogin;
+        for(int i = 0; i < iSize; i++){
+            bLogin = false;
+            Log.i("AutoTest", "(login_multiCountry)begin to login " + countryList.get(i));
+            if (login(countryList.get(i).toString())){
+                Log.i("AutoTest", "Login " + countryList.get(i) + " successfully!!!");
+                bLogin = true;
+            }else {
+                Log.e("AutoTest", "Login " + countryList.get(i) + " failed!!!");
+            }
+            if(!bLogin){
+                Log.e("AutoTest", "Login*****");
+                solo.goBack();
+                continue;
+            }
+            if (logout()){
+                Log.i("AutoTest", "Logout " + countryList.get(i) + "successfully!!!");
+            }else {
+                Log.e("AutoTest", "Logout " + countryList.get(i) + "failed!!!");
+            }
+        }
+        return true;
+    }
+
+    public boolean translate_intl(){
         return true;
     }
 }

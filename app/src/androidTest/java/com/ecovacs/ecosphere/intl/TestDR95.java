@@ -51,6 +51,7 @@ public class TestDR95 extends SingleLaunchActivityTestCase {
         Common.getInstance().init(solo);
         PropertyData.setFile("commonData.properties");
         DR95Clean.getInstance().init(solo);
+        ActivityTranslate.getInstance().init(solo);
         Log.e("AutoTest", "(setUp)end setUp");
     }
 
@@ -68,9 +69,17 @@ public class TestDR95 extends SingleLaunchActivityTestCase {
 
     }
 
-    public void test001(){
+    /*public void test001(){
        LogcatHelper.getInstance(mActivity).start();
        assertTrue(DR95Clean.getInstance().regressLogin());
+    }
+
+    public void test002(){
+        assertTrue(DR95Clean.getInstance().login_multiCountry());
+    }*/
+
+    public void test003(){
+        assertTrue(ActivityTranslate.getInstance().translateWelcome());
     }
 
 

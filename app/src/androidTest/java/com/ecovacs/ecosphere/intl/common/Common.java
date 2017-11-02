@@ -56,6 +56,10 @@ public class Common {
         return 0;
     }
 
+    public void clickViewById(String strID){
+        solo.clickOnView(solo.getView(strID));
+    }
+
     /**
      *
      * @param strID String
